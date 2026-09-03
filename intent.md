@@ -42,8 +42,8 @@ shown, so users can see *how* the answer was constructed.
 
 ## Constraints
 
-- **Cost:** hobby/demo budget — hosting and API costs should stay small
-  (roughly free-tier to low tens of dollars/month). [confirm]
+- **Cost:** hobby/demo budget — free-tier hosting, under ~$25/month total
+  (LLM and search API are the main variable costs).
 - **Team:** one developer working with Claude Code, following the AI-native SDLC
   playbook (intent → design → build with plan mode → continuous eval → deploy →
   maintain).
@@ -51,7 +51,7 @@ shown, so users can see *how* the answer was constructed.
   answering one exemplar topic well), then deepen the source pipeline.
 - **Ethics/attribution:** respect robots.txt and content licenses when fetching
   community sources; always link back; never paywall or claim their content.
-- **Domain:** unfold4all.org (already owned? [confirm]).
+- **Domain:** unfold4all.org (owned; point at hosting in the final build slice).
 
 ## Decisions (made in Plan stage, 2026-09-02)
 
@@ -65,14 +65,18 @@ shown, so users can see *how* the answer was constructed.
    (no curated context) next to the context-corrected, community-sourced answer,
    making the bias correction visible rather than asserted. May be a toggle.
 
-## Open questions (to resolve in the Design stage)
+## Formerly-open questions — resolved in the Design stage (see design.md)
 
-1. **What counts as a "primary/reliable" source, operationally?** Need explicit,
-   explainable ranking criteria (authorship proximity, community endorsement,
-   first-person testimony, etc.) — this is the intellectual core of the demo.
-2. Hosting, LLM provider, search API, vector DB, and web framework choices.
-3. Ingestion pipeline design: crawl cadence, YouTube transcript extraction,
-   chunking/embedding strategy, source-registry format.
+1. **"Primary/reliable source" is now operational:** a four-tier rubric based on
+   authorship proximity (Tier 1 community-authored → Tier 4 generic web), with
+   tiers pinned per-domain in a source registry and an LLM classifier for
+   unknown sources. See design.md § Source-ranking rubric.
+2. **Stack:** Next.js/TypeScript on Vercel, Postgres + pgvector on Neon,
+   Claude API (claude-opus-5) + Voyage embeddings, Tavily search, Python
+   ingestion pipeline. See design.md § Stack.
+3. **Ingestion design:** YAML source registry, trafilatura + YouTube transcript
+   extraction, chunk/embed into pgvector; manual/cron runs at launch. See
+   design.md § Data model and § Query flow.
 
 ## Success criteria
 
