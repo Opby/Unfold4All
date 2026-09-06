@@ -125,8 +125,9 @@ takes its pinned `tier`/`kind`/`note`; everything else goes to the classifier.
    Tier 1 → 2 → 3; include Tier 4 only if fewer than 2 sources selected so
    far, and set `honestFailure` when no Tier 1–2 made the cut.
 5. Answer with `claude-opus-5` (streaming, adaptive thinking); baseline call
-   runs in parallel from step 1 (it needs no retrieval), capped at 1024
-   output tokens.
+   runs in parallel from step 1 (it needs no retrieval) at `effort: "low"`
+   with `max_tokens: 4096` — thinking tokens count toward `max_tokens`, so a
+   tighter cap can silently swallow the entire visible answer.
 
 ## 4. Prompts (versioned files, `app/src/prompts/`)
 

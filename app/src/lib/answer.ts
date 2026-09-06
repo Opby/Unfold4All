@@ -17,24 +17,35 @@ async function runStream(
     system: string;
     messages: { role: "user" | "assistant"; content: string }[];
     maxTokens: number;
+    effort?: "low" | "medium" | "high";
   },
   { signal, onText }: StreamArgs,
 ): Promise<void> {
+  let emittedText = false;
   const stream = anthropic().beta.messages.stream(
     {
       model: ANSWER_MODEL,
       max_tokens: params.maxTokens,
       betas: [FALLBACK_BETA],
       fallbacks: "default",
+      ...(params.effort ? { output_config: { effort: params.effort } } : {}),
       system: params.system,
       messages: params.messages,
     },
     { signal },
   );
-  stream.on("text", onText);
+  stream.on("text", (text) => {
+    if (text) emittedText = true;
+    onText(text);
+  });
   const final = await stream.finalMessage();
   if (final.stop_reason === "refusal") {
     throw new Error("The model declined to answer this question.");
+  }
+  // Thinking counts toward max_tokens; a run that spent it all produces no
+  // visible text — surface that as a failure, not a silently blank pane.
+  if (!emittedText) {
+    throw new Error(`answer produced no text (stop_reason: ${final.stop_reason})`);
   }
 }
 
@@ -49,7 +60,8 @@ export async function streamBaselineAnswer(
         ...(req.history ?? []),
         { role: "user", content: req.query },
       ],
-      maxTokens: 1024,
+      maxTokens: 4096,
+      effort: "low", // quick "typical AI answer"; also keeps thinking spend small
     },
     args,
   );

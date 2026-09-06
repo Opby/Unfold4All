@@ -61,14 +61,25 @@ intent and design are version-controlled artifacts, built with Claude Code:
 | [requirements.md](requirements.md) | Design | Functional + non-functional requirements |
 | [design.md](design.md) | Design | Architecture, data model, query flow, build phasing |
 
-Planned layout as the Build stage lands: `app/` (Next.js), `pipeline/` (Python
-ingestion), `sources/` (source registry), `evals/` (golden query set), `specs/`
-(per-slice contracts).
+Layout: `app/` (Next.js site + API), `sources/` (source registry), `specs/`
+(per-slice contracts). Coming with later slices: `pipeline/` (Python
+ingestion), `evals/` (golden query set).
+
+## Running locally
+
+```bash
+cd app
+cp .env.example .env.local   # add your ANTHROPIC_API_KEY (TAVILY_API_KEY optional)
+npm install
+npm run dev                  # http://localhost:3000
+```
 
 ## Status
 
-🚧 Design stage complete; Build stage (Slice 1: end-to-end chat with on-the-fly
-retrieval) is next.
+🚧 Build Slice 1 complete: end-to-end chat with on-the-fly retrieval, tier
+classification, side-by-side comparison, and honest-failure handling. Next:
+Slice 2 (curated pgvector index + Python ingestion pipeline), then Slice 3
+(intro page, evals in CI, deploy to unfold4all.org).
 
 ## Ethics & attribution
 
