@@ -45,6 +45,7 @@ async function runBaseline(req: ChatRequest, emit: SseEmitter, signal: AbortSign
     if (signal.aborted) return;
     console.error("baseline answer failed:", err);
     emit.emit("baseline_done", { aborted: true });
+    throw err; // so total failure (both sides) yields a terminal `error`
   }
 }
 
