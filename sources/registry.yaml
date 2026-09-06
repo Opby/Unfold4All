@@ -1,0 +1,59 @@
+# Source registry — pins trust tiers for known domains (design.md § rubric).
+# Tier 1: community-authored · 2: community-collaborative · 3: secondary
+# scholarship · 4: generic web/textbook (retrieval exclude/demote list).
+# Subdomains inherit the pin. Verified: each tier-1 entry checked as the
+# organization's own site on 2026-09-04.
+
+version: 1
+domains:
+  - domain: muwekma.org
+    name: Muwekma Ohlone Tribe
+    tier: 1
+    kind: site
+    note: Official site of the Muwekma Ohlone Tribe of the San Francisco Bay Area
+
+  - domain: ramaytush.org
+    name: Association of Ramaytush Ohlone
+    tier: 1
+    kind: site
+    note: >-
+      Official site of the Association of Ramaytush Ohlone (ARO), nonprofit of
+      the original peoples of the San Francisco Peninsula. Distinct
+      organization from ramaytushtribe.org.
+
+  - domain: amahmutsun.org
+    name: Amah Mutsun Tribal Band
+    tier: 1
+    kind: site
+    note: Official site of the Amah Mutsun Tribal Band
+
+  - domain: ohlonecostanoanesselennation.org
+    name: Ohlone Costanoan Esselen Nation
+    tier: 1
+    kind: site
+    note: Official site of the Ohlone Costanoan Esselen Nation (OCEN), Monterey Bay Area
+
+  - domain: costanoanrumsen.org
+    name: Costanoan Rumsen Carmel Tribe
+    tier: 1
+    kind: site
+    note: Official site of the Costanoan Rumsen Carmel Tribe
+
+  # Tier 4 pins — excluded/demoted in retrieval, labeled gap-filler at best
+  - domain: en.wikipedia.org
+    name: Wikipedia
+    tier: 4
+    kind: article
+    note: Encyclopedia; institutional synthesis, not community voice
+
+  - domain: britannica.com
+    name: Encyclopaedia Britannica
+    tier: 4
+    kind: article
+    note: Encyclopedia
+
+  - domain: study.com
+    name: Study.com
+    tier: 4
+    kind: article
+    note: Textbook-style SEO content
