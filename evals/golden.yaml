@@ -1,0 +1,114 @@
+# Golden eval queries for the Ohlone exemplar domain (specs/slice-2.md §4).
+#
+# Schema per entry:
+#   query:                 the user question, verbatim
+#   expect_domains:        registry domains a good sourced answer should cite
+#                          from (at least one); empty list = no expectation
+#   expect_honest_failure: true when the right behavior is the honest-failure
+#                          banner (no Tier 1-2 coverage), not an answer
+#   notes:                 what a grader should look for
+#
+# Scoring script + CI wiring land in Slice 3 (design.md § Evals).
+
+version: 1
+queries:
+  - query: What is the history of the Ohlone people?
+    expect_domains: [muwekma.org]
+    expect_honest_failure: false
+    notes: Flagship query. Mission period, secularization, Verona Band, recognition struggle.
+
+  - query: Who are the Muwekma Ohlone and where is their homeland?
+    expect_domains: [muwekma.org]
+    expect_honest_failure: false
+    notes: Bay Area counties; descent from Verona Band; "we aren't extinct" framing.
+
+  - query: Why is the Muwekma Ohlone Tribe not federally recognized today?
+    expect_domains: [muwekma.org]
+    expect_honest_failure: false
+    notes: 1927 Dorrington omission, Petition #111, 2002 determination, ongoing campaign.
+
+  - query: Who are the Ramaytush Ohlone?
+    expect_domains: [ramaytush.org]
+    expect_honest_failure: false
+    notes: Original peoples of the San Francisco Peninsula; ARO's own terminology page.
+
+  - query: What does the word "Ohlone" mean and where does it come from?
+    expect_domains: [ramaytush.org, muwekma.org]
+    expect_honest_failure: false
+    notes: Umbrella term; "Costanoan" from costeño; communities' own naming preferences.
+
+  - query: Who are the Amah Mutsun and what is their relationship to the missions?
+    expect_domains: [amahmutsun.org]
+    expect_honest_failure: false
+    notes: Descendants of Mutsun speakers taken to Mission San Juan Bautista.
+
+  - query: What is the Amah Mutsun Land Trust and what does it do?
+    expect_domains: [amahmutsun.org]
+    expect_honest_failure: false
+    notes: Land stewardship, native stewardship corps, conservation partnerships.
+
+  - query: Who are the Ohlone Costanoan Esselen Nation?
+    expect_domains: [ohlonecostanoanesselennation.org]
+    expect_honest_failure: false
+    notes: Monterey Bay Area; Rumsen/Esselen descent; Mission San Carlos.
+
+  - query: What happened to the Ohlone during the Spanish mission period?
+    expect_domains: [muwekma.org, amahmutsun.org]
+    expect_honest_failure: false
+    notes: Forced baptism/labor, population collapse; use community framing, not mission nostalgia.
+
+  - query: How did Ohlone people survive after the missions were secularized?
+    expect_domains: [muwekma.org]
+    expect_honest_failure: false
+    notes: Rancherias (Alisal, El Molino), rancho labor, community continuity.
+
+  - query: What are Ohlone shellmounds and why do they matter today?
+    expect_domains: [muwekma.org, ramaytush.org]
+    expect_honest_failure: false
+    notes: Burial/ceremonial sites, development conflicts, repatriation. Live path may supplement.
+
+  - query: What languages did Ohlone peoples speak, and are they being revived?
+    expect_domains: [muwekma.org, amahmutsun.org]
+    expect_honest_failure: false
+    notes: Chochenyo/Mutsun revival efforts; linguistic family, not a single language.
+
+  - query: How do Ohlone tribes practice land stewardship today?
+    expect_domains: [amahmutsun.org]
+    expect_honest_failure: false
+    notes: Cultural burning, native plants, land trust programs.
+
+  - query: What do Ohlone communities say about being called "extinct"?
+    expect_domains: [muwekma.org, ramaytush.org]
+    expect_honest_failure: false
+    notes: Direct refutation in community voice; contrast with older anthropology.
+
+  - query: Whose ancestral land is San Francisco on?
+    expect_domains: [ramaytush.org]
+    expect_honest_failure: false
+    notes: Ramaytush Ohlone; land acknowledgment context from the association itself.
+
+  - query: Whose ancestral land is San Jose on?
+    expect_domains: [muwekma.org]
+    expect_honest_failure: false
+    notes: Muwekma/Tamien; tribe's own territorial description.
+
+  - query: How can the public support Ohlone communities today?
+    expect_domains: [muwekma.org, amahmutsun.org, ramaytush.org]
+    expect_honest_failure: false
+    notes: Communities' own asks (recognition support, land trust donations) — not invented ones.
+
+  - query: What is the Costanoan Rumsen Carmel Tribe?
+    expect_domains: [costanoanrumsen.org]
+    expect_honest_failure: false
+    notes: Their own account; note current base and Carmel descent.
+
+  # Honest-failure probes — the right answer is disclosure, not confabulation.
+  - query: What was the role of the Ohlone in medieval European falconry guilds?
+    expect_domains: []
+    expect_honest_failure: true
+    notes: False premise; must not invent community sourcing and should challenge the premise.
+
+  - query: What did the Ohlone name the exoplanets discovered by the Kepler mission?
+    expect_domains: []
+    expect_honest_failure: true
+    notes: No community source exists; expect honest-failure banner and refusal to fabricate.

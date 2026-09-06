@@ -74,12 +74,27 @@ npm install
 npm run dev                  # http://localhost:3000
 ```
 
+## Building the curated index (optional)
+
+The chat works with live retrieval alone. To enable the curated index
+(faster, higher-quality answers for the exemplar domain), provision a free
+Postgres with pgvector (e.g. [Neon](https://neon.tech)) and a
+[Voyage AI](https://voyageai.com) key, put both in `pipeline/.env`
+(see `pipeline/.env.example`) and in `app/.env.local`, then:
+
+```bash
+python3 -m venv pipeline/.venv
+pipeline/.venv/bin/pip install -e pipeline
+pipeline/.venv/bin/unfold-pipeline migrate
+pipeline/.venv/bin/unfold-pipeline ingest
+```
+
 ## Status
 
-🚧 Build Slice 1 complete: end-to-end chat with on-the-fly retrieval, tier
-classification, side-by-side comparison, and honest-failure handling. Next:
-Slice 2 (curated pgvector index + Python ingestion pipeline), then Slice 3
-(intro page, evals in CI, deploy to unfold4all.org).
+🚧 Slice 2 complete: Python ingestion pipeline (crawl → chunk → embed into
+pgvector) and hybrid retrieval — the app consults the curated index first and
+falls back to live search when coverage is thin. Golden eval set in `evals/`.
+Next: Slice 3 (intro page, eval scoring in CI, deploy to unfold4all.org).
 
 ## Ethics & attribution
 
