@@ -1,0 +1,52 @@
+# Golden-set evals (specs/slice-3.md §5). Costs real API tokens — runs only
+# on demand and on pushes to main. Convention: promote a Vercel production
+# deploy only after a green run. Required secret: ANTHROPIC_API_KEY.
+# Optional: TAVILY_API_KEY, DATABASE_URL, VOYAGE_API_KEY (enables the index).
+name: evals
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+jobs:
+  evals:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: npm ci
+        working-directory: app
+      - run: npm run build
+        working-directory: app
+      - run: pip install -e pipeline
+      - name: start app
+        working-directory: app
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          VOYAGE_API_KEY: ${{ secrets.VOYAGE_API_KEY }}
+        run: |
+          npm run start &
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:3000/api/health && break
+            sleep 2
+          done
+      - name: run evals
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: python evals/run.py --limit 8
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: eval-report
+          path: evals/report.json
+          if-no-files-found: ignore

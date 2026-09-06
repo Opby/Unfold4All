@@ -16,9 +16,22 @@ interface RegistryFile {
   domains: RegistryEntry[];
 }
 
-// Dev/self-host: cwd is app/, registry lives at the repo root. Vercel needs
-// outputFileTracingIncludes for this path (deferred to Slice 3).
-const REGISTRY_PATH = path.resolve(process.cwd(), "..", "sources", "registry.yaml");
+// Dev/self-host: cwd is app/, registry lives at the repo root. On Vercel the
+// traced file's location depends on the tracing root, so probe candidates
+// (next.config.ts outputFileTracingIncludes bundles the file).
+const REGISTRY_CANDIDATES = [
+  path.resolve(process.cwd(), "..", "sources", "registry.yaml"),
+  path.resolve(process.cwd(), "sources", "registry.yaml"),
+  path.resolve(process.cwd(), "..", "..", "sources", "registry.yaml"),
+];
+
+const REGISTRY_PATH = (() => {
+  const found = REGISTRY_CANDIDATES.find((p) => fs.existsSync(p));
+  if (!found) {
+    throw new Error(`registry.yaml not found; tried:\n${REGISTRY_CANDIDATES.join("\n")}`);
+  }
+  return found;
+})();
 
 let cached: RegistryEntry[] | null = null;
 let cachedMtime = 0;

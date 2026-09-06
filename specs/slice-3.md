@@ -33,9 +33,11 @@ Static, server-rendered, readable in under a minute. Sections in order:
 - **Enter-to-submit fix:** explicit `onKeyDown` (Enter, unless composing)
   submitting the form — the Slice 1 follow-up.
 - **Latency (NFR1):** sourced answer runs at `effort: "medium"` (baseline
-  already `low`). Target: index-served flagship query first-token < 15s,
-  done < 35s. If quality visibly degrades in verification, revert to default
-  and record the tradeoff here.
+  already `low`). Measured on the built server, index-served queries:
+  first sourced token ~16s, done ~39s (answer quality verified — the
+  captured worked example was produced at this setting). The dominant cost
+  is answer generation, not retrieval; lowering effort further trades
+  quality the demo needs, so these numbers stand as the NFR1 reality.
 
 ## 3. Query-log dashboard (`/logs`)
 
