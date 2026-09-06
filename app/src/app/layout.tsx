@@ -18,7 +18,7 @@ export const metadata: Metadata = {
     "AI answers grounded in community-authored sources — with the sources, and the reasoning for choosing them, shown explicitly.",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html
       lang="en"

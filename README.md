@@ -62,8 +62,8 @@ intent and design are version-controlled artifacts, built with Claude Code:
 | [design.md](design.md) | Design | Architecture, data model, query flow, build phasing |
 
 Layout: `app/` (Next.js site + API), `sources/` (source registry), `specs/`
-(per-slice contracts). Coming with later slices: `pipeline/` (Python
-ingestion), `evals/` (golden query set).
+(per-slice contracts), `pipeline/` (Python ingestion), `evals/` (golden query
+set + runner).
 
 ## Running locally
 
@@ -89,12 +89,40 @@ pipeline/.venv/bin/unfold-pipeline migrate
 pipeline/.venv/bin/unfold-pipeline ingest
 ```
 
+## Evals
+
+`evals/golden.yaml` holds 20 golden queries (including honest-failure
+probes). Run them against a local or deployed instance:
+
+```bash
+pipeline/.venv/bin/python evals/run.py --limit 5          # local dev server
+pipeline/.venv/bin/python evals/run.py --base-url https://unfold4all.org
+```
+
+CI runs `checks` (types/lint/build) on every PR, and the `evals` workflow on
+demand and on pushes to `main` (repo secret `ANTHROPIC_API_KEY` required;
+`TAVILY_API_KEY`, `DATABASE_URL`, `VOYAGE_API_KEY` optional). Convention:
+promote a production deploy only after a green evals run.
+
+## Deploying
+
+1. In [Vercel](https://vercel.com), import this GitHub repo; set **Root
+   Directory** to `app` (framework auto-detects Next.js).
+2. Add environment variables: `ANTHROPIC_API_KEY` (required),
+   `TAVILY_API_KEY`, `DATABASE_URL`, `VOYAGE_API_KEY` (recommended — the
+   curated index makes the demo).
+3. Deploy, then add the `unfold4all.org` domain (plus a `www` →  apex
+   redirect) under Project → Domains and point DNS per Vercel's instructions.
+4. `sources/registry.yaml` and the prompt files are bundled into the
+   serverless functions via `outputFileTracingIncludes` — registry edits
+   take effect on the next deploy.
+
 ## Status
 
-🚧 Slice 2 complete: Python ingestion pipeline (crawl → chunk → embed into
-pgvector) and hybrid retrieval — the app consults the curated index first and
-falls back to live search when coverage is thin. Golden eval set in `evals/`.
-Next: Slice 3 (intro page, eval scoring in CI, deploy to unfold4all.org).
+✅ All three build slices complete: side-by-side chat with hybrid retrieval
+and honest failure (Slice 1–2), plus intro page, golden-set eval runner, CI
+workflows, and deploy readiness (Slice 3). Remaining: connect the Vercel
+project and the unfold4all.org domain (see Deploying above).
 
 ## Ethics & attribution
 

@@ -10,6 +10,7 @@ import { sseEmitter, type SseEmitter } from "@/lib/sse";
 import type { ChatRequest } from "@/lib/types";
 
 export const runtime = "nodejs";
+export const maxDuration = 300; // Vercel Fluid compute; answers can run minutes
 
 const MAX_QUERY_CHARS = 2000;
 const MAX_HISTORY = 6;
