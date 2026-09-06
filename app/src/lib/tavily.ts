@@ -7,6 +7,7 @@ export interface Candidate {
   snippet: string;
   rawContent: string;
   score: number;
+  retrievalPath: "index" | "live";
 }
 
 const MAX_CANDIDATES = 10;
@@ -32,6 +33,7 @@ function toCandidate(r: RawResult): Candidate {
     snippet: (r.content ?? "").slice(0, 200),
     rawContent: r.rawContent ?? "",
     score: r.score ?? 0,
+    retrievalPath: "live",
   };
 }
 

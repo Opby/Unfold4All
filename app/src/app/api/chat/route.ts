@@ -1,6 +1,9 @@
 import { NextRequest } from "next/server";
 import { streamBaselineAnswer, streamSourcedAnswer } from "@/lib/answer";
-import { classifyCandidates } from "@/lib/classify";
+import { classifyCandidates, type ClassifiedCandidate } from "@/lib/classify";
+import { searchIndex } from "@/lib/index-search";
+import { indexAvailable } from "@/lib/pg";
+import { logQuery } from "@/lib/query-log";
 import { searchCommunitySources } from "@/lib/tavily";
 import { selectSources, toSourceCards } from "@/lib/select";
 import { sseEmitter, type SseEmitter } from "@/lib/sse";
@@ -49,18 +52,55 @@ async function runBaseline(req: ChatRequest, emit: SseEmitter, signal: AbortSign
   }
 }
 
-async function runSourced(req: ChatRequest, emit: SseEmitter, signal: AbortSignal) {
-  emit.emit("status", { phase: "searching", detail: "Searching community sources…" });
-  const candidates = await searchCommunitySources(req.query).catch((err) => {
-    console.error("source search failed:", err);
-    return [];
-  });
+/** Hybrid retrieval (specs/slice-2.md §3): curated index first; live search
+ *  only when index coverage is thin. Merge dedupes by URL, index wins. */
+async function retrieve(req: ChatRequest, emit: SseEmitter) {
+  const paths: ("index" | "live")[] = [];
+  let indexCandidates: ClassifiedCandidate[] = [];
+  let coverageMet = false;
 
-  emit.emit("status", { phase: "classifying", detail: "Assessing source authorship…" });
-  const classified = await classifyCandidates(req.query, candidates);
+  if (indexAvailable()) {
+    emit.emit("status", { phase: "searching", detail: "Searching curated index…" });
+    try {
+      ({ candidates: indexCandidates, coverageMet } = await searchIndex(req.query));
+      paths.push("index");
+    } catch (err) {
+      console.error("index search failed:", err);
+    }
+  }
+
+  let classified: ClassifiedCandidate[] = indexCandidates;
+  if (!coverageMet) {
+    emit.emit("status", { phase: "searching", detail: "Searching community sources…" });
+    const liveCandidates = await searchCommunitySources(req.query).catch((err) => {
+      console.error("source search failed:", err);
+      return [];
+    });
+    paths.push("live");
+    emit.emit("status", { phase: "classifying", detail: "Assessing source authorship…" });
+    const indexUrls = new Set(indexCandidates.map((c) => c.url));
+    const classifiedLive = await classifyCandidates(
+      req.query,
+      liveCandidates.filter((c) => !indexUrls.has(c.url)),
+    );
+    classified = [...indexCandidates, ...classifiedLive];
+  } else {
+    console.log(`index coverage met for query; skipping live search`);
+  }
+  return { classified, paths };
+}
+
+async function runSourced(
+  req: ChatRequest,
+  emit: SseEmitter,
+  signal: AbortSignal,
+  started: number,
+) {
+  const { classified, paths } = await retrieve(req, emit);
   const { sources, tierMix } = selectSources(classified);
+  const cards = toSourceCards(sources);
 
-  emit.emit("sources", { sources: toSourceCards(sources) });
+  emit.emit("sources", { sources: cards });
   emit.emit("status", { phase: "answering", detail: "Writing grounded answer…" });
 
   try {
@@ -74,6 +114,16 @@ async function runSourced(req: ChatRequest, emit: SseEmitter, signal: AbortSigna
     console.error("sourced answer failed:", err);
     emit.emit("sourced_done", { tierMix, aborted: true });
     throw err;
+  } finally {
+    if (!signal.aborted) {
+      logQuery({
+        query: req.query,
+        paths,
+        tierMix,
+        sources: cards,
+        latencyMs: Date.now() - started,
+      });
+    }
   }
 }
 
@@ -95,7 +145,7 @@ export async function POST(request: NextRequest): Promise<Response> {
 
       const [baseline, sourced] = await Promise.allSettled([
         runBaseline(req, emit, signal),
-        runSourced(req, emit, signal),
+        runSourced(req, emit, signal, started),
       ]);
 
       // Single terminal event: `error` only on total failure (spec §1).

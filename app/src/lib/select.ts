@@ -70,7 +70,7 @@ export function toSourceCards(sources: SelectedSource[]): SourceCard[] {
     kind: s.kind,
     tier: s.tier,
     tierJustification: s.tierJustification,
-    retrievalPath: "live" as const,
+    retrievalPath: s.retrievalPath,
     snippet: s.snippet || undefined,
   }));
 }
