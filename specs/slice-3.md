@@ -82,10 +82,16 @@ groundedness passes on ≥90% of scored queries (judge flakiness tolerance).
 
 ## 6. Vercel deploy
 
-- `next.config.ts`: `outputFileTracingIncludes` for `sources/registry.yaml`
-  and `src/prompts/*.md` on the routes that read them; registry path
-  resolution must work both locally (`app/` cwd) and in the traced function
-  filesystem.
+- **The app must not depend on files outside `app/` at runtime.** Vercel's
+  Root Directory setting states the app "will not be able to access files
+  outside of that directory", and tracing across that boundary is unreliable
+  even with the "Include files outside the Root Directory in the Build Step"
+  toggle enabled. So `prebuild` (`app/scripts/sync-registry.mjs`) copies the
+  canonical `sources/registry.yaml` into `app/sources/` (gitignored), and
+  `outputFileTracingIncludes` references only in-project paths
+  (`sources/registry.yaml`, `src/prompts/**/*.md`). Dev still reads the
+  repo-root registry directly, so registry edits stay live without a build;
+  `src/lib/registry.ts` probes both locations in that order.
 - `/api/chat` route: `export const maxDuration = 300` (Fluid compute).
 - `npm run build` must pass locally — that is this slice's deploy
   verification. The actual Vercel project (import repo, root directory

@@ -25,3 +25,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# build-time copy of the canonical sources/registry.yaml (see scripts/sync-registry.mjs)
+/sources

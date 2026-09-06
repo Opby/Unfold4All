@@ -106,16 +106,20 @@ promote a production deploy only after a green evals run.
 
 ## Deploying
 
-1. In [Vercel](https://vercel.com), import this GitHub repo; set **Root
-   Directory** to `app` (framework auto-detects Next.js).
-2. Add environment variables: `ANTHROPIC_API_KEY` (required),
+1. In [Vercel](https://vercel.com), import this GitHub repo. Set **Root
+   Directory** to `app` and keep **"Include files outside the Root Directory
+   in the Build Step"** enabled — the build copies the canonical
+   `sources/registry.yaml` into the app (see `app/scripts/sync-registry.mjs`).
+   Framework auto-detects as Next.js.
+2. Add environment variables (paste all four lines from your local
+   `app/.env.local` at once): `ANTHROPIC_API_KEY` (required),
    `TAVILY_API_KEY`, `DATABASE_URL`, `VOYAGE_API_KEY` (recommended — the
-   curated index makes the demo).
-3. Deploy, then add the `unfold4all.org` domain (plus a `www` →  apex
+   curated index is what makes the demo).
+3. Deploy, then add the `unfold4all.org` domain (plus a `www` → apex
    redirect) under Project → Domains and point DNS per Vercel's instructions.
-4. `sources/registry.yaml` and the prompt files are bundled into the
-   serverless functions via `outputFileTracingIncludes` — registry edits
-   take effect on the next deploy.
+4. The registry and prompt files are bundled into the serverless functions,
+   so registry edits take effect on the next deploy. Re-run the ingestion
+   pipeline separately whenever you add community sources.
 
 ## Status
 
