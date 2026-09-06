@@ -62,7 +62,7 @@ score:
 | `honest_failure` | `tierMix.honestFailure` equals `expect_honest_failure` |
 | `expected_domains` | some source URL's host matches some `expect_domains` entry (skipped when the list is empty) |
 | `citations` | every `[n]` marker in the answer resolves to a provided source id, and ≥1 marker exists (skipped for honest-failure expectations) |
-| `groundedness` | LLM judge (`claude-haiku-4-5`, structured output `{grounded: bool, reason}`): every factual claim in the answer is supported by the provided source texts |
+| `groundedness` | LLM judge (`claude-haiku-4-5`, structured output `{grounded: bool, reason}`) auditing **citation discipline**: no uncited factual claims, no citations to missing ids, no contradictions of the source excerpts. The judge sees only card snippets, not the full source texts, so it explicitly does not attempt fact verification — full-text verification would need the answerer's context exposed to the runner (a future enhancement). |
 
 Output: per-query table + `evals/report.json` (gitignored); `--limit N` and
 `--query SUBSTR` filters. Exit code 0 only if all non-judge checks pass and

@@ -92,14 +92,20 @@ def judge_groundedness(anthropic_client, query: str, result: ChatResult) -> tupl
             {
                 "role": "user",
                 "content": (
-                    "You are auditing a retrieval-grounded answer. The answerer was "
-                    "instructed to use ONLY the provided sources and cite them as [n].\n\n"
-                    f"Question: {query}\n\nSources provided (titles/snippets):\n{source_texts}\n\n"
+                    "You are auditing the CITATION DISCIPLINE of a retrieval-grounded "
+                    "answer. The answerer saw the FULL text of each source; you see only "
+                    "short excerpts, so you CANNOT verify facts — do not try, and never "
+                    "fail an answer because the excerpts are too short to confirm a claim.\n\n"
+                    f"Question: {query}\n\nSources (titles + short excerpts only):\n{source_texts}\n\n"
                     f"Answer:\n{result.answer}\n\n"
-                    "Is the answer grounded — does it stick to claims attributable to the "
-                    "provided sources (citing them), avoid uncited factual claims from "
-                    "outside knowledge, and honestly disclose gaps? Judge structure and "
-                    "citation discipline; you cannot verify every fact from snippets alone."
+                    "Return grounded=false ONLY if you find at least one of:\n"
+                    "1. A substantive factual claim presented with NO citation marker at all.\n"
+                    "2. A citation to a source id that was not provided.\n"
+                    "3. A claim that directly CONTRADICTS one of the excerpts.\n"
+                    "4. No 'Why these sources' style disclosure while claiming coverage "
+                    "the source list obviously cannot support (e.g. citing nothing).\n"
+                    "Otherwise return grounded=true. In `reason`, name the specific "
+                    "violation or state that citation discipline holds."
                 ),
             }
         ],
