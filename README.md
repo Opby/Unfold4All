@@ -119,10 +119,10 @@ promote a production deploy only after a green evals run.
 
 ## Status
 
-🚧 Slice 2 complete: Python ingestion pipeline (crawl → chunk → embed into
-pgvector) and hybrid retrieval — the app consults the curated index first and
-falls back to live search when coverage is thin. Golden eval set in `evals/`.
-Next: Slice 3 (intro page, eval scoring in CI, deploy to unfold4all.org).
+✅ All three build slices complete: side-by-side chat with hybrid retrieval
+and honest failure (Slice 1–2), plus intro page, golden-set eval runner, CI
+workflows, and deploy readiness (Slice 3). Remaining: connect the Vercel
+project and the unfold4all.org domain (see Deploying above).
 
 ## Ethics & attribution
 
