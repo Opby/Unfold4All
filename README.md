@@ -2,7 +2,7 @@
 
 **Better context, not a better model: correcting AI bias through source selection.**
 
-unfold4all is a demo site with an introductory page and a chat interface that
+Unfold4all is a demo site with an introductory page and a chat interface that
 answers questions by deliberately seeking out **primary, community-authored
 sources** — and shows its work. Ask about Ohlone history and culture, and the
 answer draws on the tribe's own blogs, websites, and YouTube video transcripts
