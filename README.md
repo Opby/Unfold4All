@@ -2,8 +2,9 @@
 
 **Better context, not a better model: correcting AI bias through source selection.**
 
-**▶ Try it live: [unfold4-all.vercel.app](https://unfold4-all.vercel.app)** — ask
-about Ohlone history or culture and watch the two answers diverge.
+**▶ Try it live: [unfold4-all.vercel.app](https://unfold4-all.vercel.app)** —
+start with *"What is the history of the Ohlone people?"* and watch the two
+answers diverge.
 
 Unfold4all is a demo site with an introductory page and a chat interface that
 answers questions by deliberately seeking out **primary, community-authored
@@ -99,7 +100,7 @@ probes). Run them against a local or deployed instance:
 
 ```bash
 pipeline/.venv/bin/python evals/run.py --limit 5          # local dev server
-pipeline/.venv/bin/python evals/run.py --base-url https://unfold4all.org
+pipeline/.venv/bin/python evals/run.py --base-url https://unfold4-all.vercel.app
 ```
 
 CI runs `checks` (types/lint/build) on every PR, and the `evals` workflow on
@@ -126,11 +127,21 @@ promote a production deploy only after a green evals run.
 
 ## Status
 
-✅ Live at [unfold4-all.vercel.app](https://unfold4-all.vercel.app). All three
-build slices are complete: side-by-side chat with hybrid retrieval and honest
+✅ Live and verified at
+[unfold4-all.vercel.app](https://unfold4-all.vercel.app). All three build
+slices are complete: side-by-side chat with hybrid retrieval and honest
 failure (Slice 1–2), plus intro page, golden-set eval runner, CI workflows,
-and deployment (Slice 3). Remaining: point the `unfold4all.org` domain at the
-Vercel project (see Deploying above).
+and deployment (Slice 3).
+
+Production verification (2026-09-06): the golden eval set passes 5/5 against
+the live site — expected community domains cited, every citation marker
+resolving, 100% groundedness, and the honest-failure probe correctly
+declining to invent community sourcing. Answers are served from the curated
+index (58 documents / ~146 chunks across five Ohlone tribal organizations),
+with live search as the fallback for thin coverage.
+
+Remaining: point the `unfold4all.org` domain at the Vercel project (see
+Deploying above).
 
 ## Ethics & attribution
 
