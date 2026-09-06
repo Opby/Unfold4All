@@ -10,7 +10,7 @@ Design stage, 2026-09-02. Satisfies [requirements.md](requirements.md).
 | Database | **Postgres + pgvector on Neon (free tier)** | One DB for source registry, chunks + embeddings, query logs. |
 | Answering LLM | **Claude API, `claude-opus-5`** | Streaming, adaptive thinking (default). Same model for baseline and sourced answers so the comparison isolates *context*, not model quality. |
 | Tier classifier | **`claude-haiku-4-5`** | Cheap per-source classification calls where the registry doesn't already decide the tier. |
-| Embeddings | **Voyage AI (`voyage-3.5-lite`)** | Claude API has no embeddings endpoint; Voyage is the standard pairing. Free tier covers a demo-size corpus. Used by both the Python pipeline (indexing) and the app (query embedding, via REST). |
+| Embeddings | **Voyage AI (`voyage-4-lite`)** | Claude API has no embeddings endpoint; Voyage is the standard pairing. Free tier covers a demo-size corpus. Used by both the Python pipeline (indexing) and the app (query embedding, via REST). |
 | On-the-fly search | **Tavily API** | Domain include/exclude lists implement tier preferences; built-in content extraction. |
 | Ingestion pipeline | **Python 3.12** (`pipeline/`) | `trafilatura` (web extraction), `youtube-transcript-api`/`yt-dlp` (transcripts), `voyageai`, `psycopg`. Run manually / cron at launch. |
 
