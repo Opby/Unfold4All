@@ -25,6 +25,16 @@ export function SourceCardView({
       <div className="mb-1 flex flex-wrap items-center gap-2">
         <span className="font-mono text-xs text-zinc-500">[{source.id}]</span>
         <TierBadge tier={source.tier} justification={source.tierJustification} />
+        <span
+          title={
+            source.retrievalPath === "index"
+              ? "From the curated, pre-indexed corpus"
+              : "Found by live web search for this question"
+          }
+          className="cursor-help rounded-full border border-zinc-300 px-2 py-0.5 text-xs text-zinc-500 dark:border-zinc-600 dark:text-zinc-400"
+        >
+          {source.retrievalPath === "index" ? "curated" : "live web"}
+        </span>
         <span className="text-xs text-zinc-500">{KIND_LABEL[source.kind]}</span>
       </div>
       <a

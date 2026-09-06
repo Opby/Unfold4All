@@ -100,6 +100,7 @@ export async function streamSourcedAnswer(
         },
       ],
       maxTokens: 4096,
+      effort: "medium", // NFR1 latency; specs/slice-3.md §2 records the tradeoff
     },
     args,
   );
