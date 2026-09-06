@@ -29,12 +29,20 @@ NFR1–NFR5) → `design.md` (architecture, tiers, phasing) → `specs/slice-N.m
 ## Commands
 
 - Dev server: `cd app && npm run dev` (needs `app/.env.local` with
-  `ANTHROPIC_API_KEY`; `TAVILY_API_KEY` optional — keyless mode is rate-limited).
+  `ANTHROPIC_API_KEY`; `TAVILY_API_KEY` optional — keyless mode is rate-limited;
+  optional `DATABASE_URL` + `VOYAGE_API_KEY` pair enables the curated index —
+  without them the app runs live-only, by design).
 - Checks: `cd app && npx tsc --noEmit && npm run lint`.
+- Pipeline setup: `python3 -m venv pipeline/.venv && pipeline/.venv/bin/pip
+  install -e pipeline` (Python ≥3.12; `pipeline/.env` needs `DATABASE_URL`,
+  `VOYAGE_API_KEY`).
+- Index build: `pipeline/.venv/bin/unfold-pipeline migrate` then `... ingest
+  [--max-pages N]`; inspect with `... status [--logs]`. All commands are
+  idempotent (sha256 hash-skip).
 
 ## Current stage
 
-Build Slice 1 (on-the-fly retrieval, no DB). Slice 2 adds the Python pipeline
-+ pgvector index; Slice 3 adds intro page, evals in CI, Vercel deploy
-(remember `outputFileTracingIncludes` for `sources/registry.yaml` and
-`app/src/prompts/*.md`).
+Slice 2 (pipeline + pgvector index, hybrid retrieval, golden eval set) built
+on branch `slice-2-pipeline`. Slice 3 adds intro page, eval scoring in CI,
+Vercel deploy (remember `outputFileTracingIncludes` for
+`sources/registry.yaml` and `app/src/prompts/*.md`).
