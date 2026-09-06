@@ -117,7 +117,11 @@ takes its pinned `tier`/`kind`/`note`; everything else goes to the classifier.
 
 1. Tavily search pass A: query against include-list of registry Tier 1–2
    domains. Pass B (always run): unrestricted query with registry-known
-   textbook/aggregator domains excluded. Cap combined candidates at ~10.
+   textbook/aggregator domains excluded. Drop results scoring < 0.45
+   (domain-restricted search returns best-effort matches even for questions
+   the domains don't cover; without a floor, irrelevant registry-pinned pages
+   defeat honest failure — measured: real ≥0.65, nonsense probes ≤0.36). Cap
+   combined candidates at ~10.
 2. Extract content for top candidates (Tavily raw content; skip failures).
 3. Tier-assign each candidate: registry pin, else `claude-haiku-4-5`
    classifier (§4.3), calls made in parallel.

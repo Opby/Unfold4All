@@ -11,6 +11,11 @@ export interface Candidate {
 }
 
 const MAX_CANDIDATES = 10;
+// Domain-restricted searches return best-effort matches even for questions
+// the domains don't cover; without a floor, irrelevant registry-pinned pages
+// would defeat honest failure (FR8). Measured: real queries score ≥0.65,
+// nonsense probes ≤0.36.
+const MIN_RESULT_SCORE = 0.45;
 
 // Keyless mode (shared rate limit) works when TAVILY_API_KEY is unset —
 // fine for local demos; real traffic needs a key.
@@ -69,6 +74,7 @@ export async function searchCommunitySources(query: string): Promise<Candidate[]
     if (pass.status !== "fulfilled") continue;
     for (const r of pass.value.results as RawResult[]) {
       const c = toCandidate(r);
+      if (c.score < MIN_RESULT_SCORE) continue;
       // Empty extraction → drop rather than sending empty text to the model.
       if (!c.rawContent.trim() && !c.snippet.trim()) continue;
       if (seen.has(c.url)) continue;

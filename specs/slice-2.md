@@ -94,7 +94,10 @@ New module `app/src/lib/index-search.ts`:
 - `indexAvailable()`: `DATABASE_URL` set (connection pooled via `pg`).
 - `searchIndex(query)`: embed query via Voyage REST (`input_type: "query"`,
   model `voyage-4-lite`); `SELECT` top **8** chunks by cosine distance with
-  document + source joins; group chunks by document → candidates
+  document + source joins; **drop chunks below similarity 0.40** (the index
+  always returns nearest neighbors — without a floor, irrelevant Tier-1
+  chunks would defeat honest failure; measured separation: real queries
+  ≥0.53, nonsense probes ≤0.36); group survivors by document → candidates
   (`retrievalPath: "index"`, tier/kind/note from `sources`, text = joined
   chunk texts in seq order, score = max similarity).
 
