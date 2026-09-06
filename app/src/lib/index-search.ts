@@ -7,6 +7,10 @@ const TOP_K = 8;
 const COVERAGE_MIN_SIMILARITY = 0.45;
 const COVERAGE_MIN_CHUNKS = 3;
 const COVERAGE_MIN_DOCS = 2;
+// Below this, a chunk is noise for the query: the index always returns
+// nearest neighbors, and admitting irrelevant Tier-1 chunks would defeat
+// honest failure (FR8). Measured: real queries ≥0.53, nonsense probes ≤0.36.
+const MIN_CANDIDATE_SIMILARITY = 0.4;
 
 interface ChunkHit {
   docId: number;
@@ -53,7 +57,9 @@ export async function searchIndex(query: string): Promise<IndexSearchResult> {
     [vector, TOP_K],
   );
 
-  const hits: ChunkHit[] = rows.map((r) => ({
+  const hits: ChunkHit[] = rows
+    .filter((r) => Number(r.similarity) >= MIN_CANDIDATE_SIMILARITY)
+    .map((r) => ({
     docId: r.doc_id,
     url: r.url,
     title: r.title,
