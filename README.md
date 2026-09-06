@@ -2,6 +2,9 @@
 
 **Better context, not a better model: correcting AI bias through source selection.**
 
+**▶ Try it live: [unfold4-all.vercel.app](https://unfold4-all.vercel.app)** — ask
+about Ohlone history or culture and watch the two answers diverge.
+
 Unfold4all is a demo site with an introductory page and a chat interface that
 answers questions by deliberately seeking out **primary, community-authored
 sources** — and shows its work. Ask about Ohlone history and culture, and the
@@ -123,10 +126,11 @@ promote a production deploy only after a green evals run.
 
 ## Status
 
-✅ All three build slices complete: side-by-side chat with hybrid retrieval
-and honest failure (Slice 1–2), plus intro page, golden-set eval runner, CI
-workflows, and deploy readiness (Slice 3). Remaining: connect the Vercel
-project and the unfold4all.org domain (see Deploying above).
+✅ Live at [unfold4-all.vercel.app](https://unfold4-all.vercel.app). All three
+build slices are complete: side-by-side chat with hybrid retrieval and honest
+failure (Slice 1–2), plus intro page, golden-set eval runner, CI workflows,
+and deployment (Slice 3). Remaining: point the `unfold4all.org` domain at the
+Vercel project (see Deploying above).
 
 ## Ethics & attribution
 
