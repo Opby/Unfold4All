@@ -1,7 +1,8 @@
 "use client";
 
-import type { SourceCard, TierMix } from "@/lib/types";
+import type { AnswerMetrics, SourceCard, TierMix } from "@/lib/types";
 import { AnswerMarkdown } from "./Markdown";
+import { MetricsStrip } from "./MetricsStrip";
 import { SourceCardView } from "./SourceCard";
 
 export interface BaselineState {
@@ -24,6 +25,7 @@ export interface ExchangeData {
   query: string;
   baseline: BaselineState;
   sourced: SourcedState;
+  metrics?: AnswerMetrics;
   error?: string;
   inFlight: boolean;
 }
@@ -39,8 +41,16 @@ export function Exchange({
   onToggleBaseline: () => void;
   onRetry: () => void;
 }) {
-  const { query, baseline, sourced, error, inFlight } = exchange;
+  const { query, baseline, sourced, metrics, error, inFlight } = exchange;
   const citePrefix = `cite-${exchange.id}`;
+  const analyzing =
+    inFlight &&
+    !metrics &&
+    baseline.done &&
+    sourced.done &&
+    !baseline.aborted &&
+    !sourced.aborted &&
+    !sourced.tierMix?.honestFailure;
 
   return (
     <section className="space-y-3">
@@ -117,6 +127,11 @@ export function Exchange({
           )}
         </div>
       </div>
+
+      {analyzing && (
+        <p className="animate-pulse text-xs text-zinc-500">Analyzing answer framing…</p>
+      )}
+      {metrics && <MetricsStrip metrics={metrics} />}
 
       {error && !inFlight && (
         <div className="flex items-center justify-between rounded-lg border border-red-300 bg-red-50 px-4 py-2 text-sm text-red-800 dark:border-red-900 dark:bg-red-950/40 dark:text-red-200">

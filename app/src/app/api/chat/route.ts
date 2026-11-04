@@ -2,12 +2,13 @@ import { NextRequest } from "next/server";
 import { streamBaselineAnswer, streamSourcedAnswer } from "@/lib/answer";
 import { classifyCandidates, type ClassifiedCandidate } from "@/lib/classify";
 import { searchIndex } from "@/lib/index-search";
+import { computeAnswerMetrics } from "@/lib/metrics";
 import { indexAvailable } from "@/lib/pg";
 import { logQuery } from "@/lib/query-log";
 import { searchCommunitySources } from "@/lib/tavily";
 import { selectSources, toSourceCards } from "@/lib/select";
 import { sseEmitter, type SseEmitter } from "@/lib/sse";
-import type { ChatRequest } from "@/lib/types";
+import type { ChatRequest, SourceCard, TierMix } from "@/lib/types";
 
 export const runtime = "nodejs";
 export const maxDuration = 300; // Vercel Fluid compute; answers can run minutes
@@ -37,16 +38,26 @@ function parseRequest(body: unknown): ChatRequest | null {
   return { query, history, compare: b.compare !== false };
 }
 
-async function runBaseline(req: ChatRequest, emit: SseEmitter, signal: AbortSignal) {
-  if (!req.compare) return;
+/** Returns the full baseline text ("" when comparison is off or aborted). */
+async function runBaseline(
+  req: ChatRequest,
+  emit: SseEmitter,
+  signal: AbortSignal,
+): Promise<string> {
+  if (!req.compare) return "";
+  let text = "";
   try {
     await streamBaselineAnswer(req, {
       signal,
-      onText: (text) => emit.emit("baseline_delta", { text }),
+      onText: (t) => {
+        text += t;
+        emit.emit("baseline_delta", { text: t });
+      },
     });
     emit.emit("baseline_done", {});
+    return text;
   } catch (err) {
-    if (signal.aborted) return;
+    if (signal.aborted) return "";
     console.error("baseline answer failed:", err);
     emit.emit("baseline_done", { aborted: true });
     throw err; // so total failure (both sides) yields a terminal `error`
@@ -91,12 +102,19 @@ async function retrieve(req: ChatRequest, emit: SseEmitter) {
   return { classified, paths };
 }
 
+interface SourcedResult {
+  text: string;
+  tierMix: TierMix;
+  cards: SourceCard[];
+  paths: ("index" | "live")[];
+}
+
 async function runSourced(
   req: ChatRequest,
   emit: SseEmitter,
   signal: AbortSignal,
   started: number,
-) {
+): Promise<SourcedResult> {
   const { classified, paths } = await retrieve(req, emit);
   const { sources, tierMix } = selectSources(classified);
   const cards = toSourceCards(sources);
@@ -104,27 +122,30 @@ async function runSourced(
   emit.emit("sources", { sources: cards });
   emit.emit("status", { phase: "answering", detail: "Writing grounded answer…" });
 
+  let text = "";
   try {
     await streamSourcedAnswer(req, sources, tierMix.honestFailure, {
       signal,
-      onText: (text) => emit.emit("sourced_delta", { text }),
+      onText: (t) => {
+        text += t;
+        emit.emit("sourced_delta", { text: t });
+      },
     });
     emit.emit("sourced_done", { tierMix });
+    return { text, tierMix, cards, paths };
   } catch (err) {
-    if (signal.aborted) return;
+    if (signal.aborted) return { text, tierMix, cards, paths };
     console.error("sourced answer failed:", err);
     emit.emit("sourced_done", { tierMix, aborted: true });
+    // Failure path still logs (FR9); the success path logs after metrics.
+    logQuery({
+      query: req.query,
+      paths,
+      tierMix,
+      sources: cards,
+      latencyMs: Date.now() - started,
+    });
     throw err;
-  } finally {
-    if (!signal.aborted) {
-      logQuery({
-        query: req.query,
-        paths,
-        tierMix,
-        sources: cards,
-        latencyMs: Date.now() - started,
-      });
-    }
   }
 }
 
@@ -157,9 +178,33 @@ export async function POST(request: NextRequest): Promise<Response> {
           message: "Something went wrong answering this question. Please try again.",
           phase: "answering",
         });
-      } else {
-        emit.emit("done", { latencyMs: Date.now() - started });
+        emit.close();
+        return;
       }
+
+      // FR10–FR12: metrics run only after both answers fully streamed (NFR6),
+      // only in comparison mode, and never against an honest-failure answer
+      // (there is no grounded framing to compare). Failures stay silent.
+      if (sourced.status === "fulfilled" && !signal.aborted) {
+        const s = sourced.value;
+        const baselineText = baseline.status === "fulfilled" ? baseline.value : "";
+        let metrics = null;
+        if (baselineText && s.text && !s.tierMix.honestFailure) {
+          emit.emit("status", { phase: "analyzing", detail: "Analyzing answer framing…" });
+          metrics = await computeAnswerMetrics(req.query, baselineText, s.text);
+          if (metrics) emit.emit("metrics", metrics);
+        }
+        logQuery({
+          query: req.query,
+          paths: s.paths,
+          tierMix: s.tierMix,
+          sources: s.cards,
+          latencyMs: Date.now() - started,
+          metrics,
+        });
+      }
+
+      emit.emit("done", { latencyMs: Date.now() - started });
       emit.close();
     },
     cancel() {
