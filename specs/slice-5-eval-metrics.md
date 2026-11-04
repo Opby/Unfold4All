@@ -67,6 +67,14 @@ diagonal with per-bin claim counts and ECE in the legend. Expected headline
 (requirements FR14): baseline sits above the diagonal (overconfident),
 sourced tracks it.
 
+**Caveat (observed on the first full run, 2026-11-03):** cross-path ECE
+comparisons must be read next to `coverage`. The baseline's wrong claims
+tend to be the ones the community corpus does not address (generic or
+invented framing), so they fall in `not_covered` and leave the ECE pool —
+covered-claims ECE can flatter the baseline. The report therefore always
+carries `coverage` and the verdict counts alongside `ece`, and the summary
+line prints them together; the methods page (FR17) must state this limit.
+
 ## 4. FR15 — self-consistency ($D_{self}$)
 
 Probe queries = all parity-pair instantiations plus

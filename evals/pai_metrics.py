@@ -121,7 +121,9 @@ def elicit_claims(anthropic_client, query: str, answer: str) -> list[Claim]:
 
     response = anthropic_client.messages.parse(
         model=ELICIT_MODEL,
-        max_tokens=2048,
+        # 10 standalone claims + confidences need room; a truncated JSON body
+        # fails the whole answer's elicitation (seen at 2048 on long answers).
+        max_tokens=4096,
         messages=[
             {
                 "role": "user",
@@ -274,7 +276,8 @@ def reliability_diagram(baseline: dict, sourced: dict, out_path: Path) -> bool:
         label = f"{name} — ECE {stats['ece']:.3f}, n={stats['n']}" if stats["n"] else name
         ax.plot(xs, ys, "o-", color=color, label=label)
         for x, y, n in zip(xs, ys, ns):
-            ax.annotate(str(n), (x, y), textcoords="offset points", xytext=(5, 4), fontsize=7)
+            dy = -11 if y > 0.95 else 4  # keep labels inside the axes
+            ax.annotate(str(n), (x, y), textcoords="offset points", xytext=(5, dy), fontsize=7)
     ax.set_xlim(0, 1)
     ax.set_ylim(0, 1)
     ax.set_xlabel("verbalized confidence (binned mean)")

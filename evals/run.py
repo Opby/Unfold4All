@@ -269,8 +269,9 @@ def main() -> int:
         cal = pai["calibration"]
         print("\n[pai] ECE (5 bins): "
               + ", ".join(
-                  f"{p}={cal[p]['ece']:.3f} (n={cal[p]['n']})" if cal[p]["ece"] is not None
-                  else f"{p}=n/a" for p in ("baseline", "sourced")))
+                  f"{p}={cal[p]['ece']:.3f} (n={cal[p]['n']}, coverage={cal[p]['coverage']:.0%})"
+                  if cal[p]["ece"] is not None else f"{p}=n/a"
+                  for p in ("baseline", "sourced")))
         agg = pai["self_consistency"]["aggregate"]
         print(f"[pai] self-consistency (k={pai['self_consistency']['k']}): "
               f"distance {agg['mean_pairwise_distance']}, flips {agg['claim_flip_fraction']}")
