@@ -28,9 +28,39 @@ export interface TierMix {
   honestFailure: boolean; // true when no Tier 1–2 sources found
 }
 
+// ---- PAI metrics (requirements.md FR10–FR12; specs/slice-4-metrics.md) ----
+
+/** Verbs whose subject is the community, tagged by tense (FR10). */
+export interface FramingTags {
+  pastVerbs: string[];
+  presentVerbs: string[];
+}
+
+/** One semantic slot that shifted between baseline and sourced answer (FR11). */
+export interface SemanticShift {
+  aspect: string; // e.g. "sovereignty", "time framing"
+  baseline: string; // short phrase as the baseline put it
+  sourced: string; // short phrase as the sourced answer put it
+}
+
+export interface AnswerMetrics {
+  community: string; // who the framing analysis is about
+  baseline: FramingTags;
+  sourced: FramingTags;
+  shifts: SemanticShift[]; // ≤3, most salient first
+  /** Embedding cosine distance between the two answers, 0..1 (text-level
+   *  JS-divergence proxy); null when embeddings are unavailable. */
+  divergence: number | null;
+}
+
 // ---- SSE events (specs/slice-1.md §1) ----
 
-export type ChatPhase = "searching" | "reading" | "classifying" | "answering";
+export type ChatPhase =
+  | "searching"
+  | "reading"
+  | "classifying"
+  | "answering"
+  | "analyzing";
 
 export interface ChatRequest {
   query: string;
@@ -45,6 +75,7 @@ export type SseEventMap = {
   sources: { sources: SourceCard[] };
   sourced_delta: { text: string };
   sourced_done: { tierMix: TierMix; aborted?: boolean };
+  metrics: AnswerMetrics;
   done: { latencyMs: number };
   error: { message: string; phase?: string };
 };

@@ -29,6 +29,12 @@ export function prompts() {
     sourcedAnswer: load("sourced-answer"),
     baselineAnswer: load("baseline-answer"),
     tierClassifier: load("tier-classifier"),
+    framingAnalysis: load("framing-analysis"),
   };
-  return cache as { sourcedAnswer: string; baselineAnswer: string; tierClassifier: string };
+  return cache as {
+    sourcedAnswer: string;
+    baselineAnswer: string;
+    tierClassifier: string;
+    framingAnalysis: string;
+  };
 }

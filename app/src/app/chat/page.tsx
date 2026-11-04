@@ -146,6 +146,7 @@ export default function ChatPage() {
                 status: undefined,
               },
             })),
+          metrics: (p) => patchLast((e) => ({ ...e, metrics: p })),
           done: () => {
             patchLast((e) => ({ ...e, inFlight: false }));
             finish();
