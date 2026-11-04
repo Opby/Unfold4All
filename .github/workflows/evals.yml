@@ -8,6 +8,7 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
+    paths-ignore: ["**.md"]  # doc-only pushes shouldn't spend eval tokens
 
 jobs:
   evals:
