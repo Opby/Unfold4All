@@ -1,14 +1,12 @@
-# Golden-set evals (specs/slice-3.md §5). Costs real API tokens — runs only
-# on demand and on pushes to main. Convention: promote a Vercel production
-# deploy only after a green run. Required secret: ANTHROPIC_API_KEY.
-# Optional: TAVILY_API_KEY, DATABASE_URL, VOYAGE_API_KEY (enables the index).
+# Golden-set evals (specs/slice-3.md §5). Costs real API tokens — runs ONLY
+# when triggered manually (Actions tab → evals → Run workflow). Convention:
+# promote a Vercel production deploy only after a green run. Required secret:
+# ANTHROPIC_API_KEY. Optional: TAVILY_API_KEY, DATABASE_URL, VOYAGE_API_KEY
+# (enables the index).
 name: evals
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths-ignore: ["**.md"]  # doc-only pushes shouldn't spend eval tokens
 
 jobs:
   evals:

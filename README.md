@@ -181,9 +181,10 @@ never changes the exit code, and stays within a single-digit dollar budget
 per run (report contract:
 [specs/slice-5-eval-metrics.md](specs/slice-5-eval-metrics.md)).
 
-CI runs `checks` (types/lint/build) on every PR and the `evals` workflow on
-demand and on pushes to `main` (repo secret `ANTHROPIC_API_KEY` required).
-Convention: promote a production deploy only after a green evals run.
+CI runs `checks` (types/lint/build) on every PR; the `evals` workflow runs
+only when triggered manually from the Actions tab (repo secret
+`ANTHROPIC_API_KEY` required — it costs real API tokens). Convention: promote
+a production deploy only after a green evals run.
 
 ## Deploying
 
