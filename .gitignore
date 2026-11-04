@@ -7,3 +7,4 @@ temp.txt
 __pycache__/
 *.egg-info/
 evals/report.json
+evals/reliability.png

@@ -48,5 +48,7 @@ jobs:
         if: always()
         with:
           name: eval-report
-          path: evals/report.json
+          path: |
+            evals/report.json
+            evals/reliability.png
           if-no-files-found: ignore
