@@ -7,15 +7,21 @@ resolution, and LLM-judged groundedness. Run with the pipeline venv:
 
     pipeline/.venv/bin/python evals/run.py [--base-url URL] [--limit N] [--query SUBSTR]
 
-Requires ANTHROPIC_API_KEY (env or pipeline/.env) for the judge; the target
-app instance needs its own keys. Exit 0 iff all non-judge checks pass and
-groundedness passes on >=90% of judged queries.
+Requires ANTHROPIC_API_KEY (env, pipeline/.env, or app/.env.local) for the
+judge; the target app instance needs its own keys. Exit 0 iff all non-judge
+checks pass and groundedness passes on >=90% of judged queries.
+
+--pai additionally runs the PAI probabilistic metrics (FR13-FR16: claim
+calibration/ECE, self-consistency sampling, framing-parity probes) and needs
+DATABASE_URL + VOYAGE_API_KEY for the Tier 1-2 corpus oracle. PAI metrics are
+report-only and never change the exit code (specs/slice-5-eval-metrics.md).
 """
 
 from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import sys
 from dataclasses import asdict, dataclass
@@ -42,19 +48,25 @@ class ChatResult:
     tier_mix: dict
     aborted: bool
     error: str | None
+    baseline: str = ""  # only populated on compare runs (--pai)
+    baseline_aborted: bool = False
 
 
-def run_query(client: httpx.Client, base_url: str, query: str) -> ChatResult:
+def run_query(
+    client: httpx.Client, base_url: str, query: str, compare: bool = False
+) -> ChatResult:
     answer_parts: list[str] = []
+    baseline_parts: list[str] = []
     sources: list[dict] = []
     tier_mix: dict = {}
     aborted = False
+    baseline_aborted = False
     error = None
     event = None
     with client.stream(
         "POST",
         f"{base_url}/api/chat",
-        json={"query": query, "compare": False},
+        json={"query": query, "compare": compare},
         timeout=180,
     ) as resp:
         resp.raise_for_status()
@@ -65,14 +77,26 @@ def run_query(client: httpx.Client, base_url: str, query: str) -> ChatResult:
                 data = json.loads(line[6:])
                 if event == "sourced_delta":
                     answer_parts.append(data["text"])
+                elif event == "baseline_delta":
+                    baseline_parts.append(data["text"])
                 elif event == "sources":
                     sources = data["sources"]
                 elif event == "sourced_done":
                     tier_mix = data["tierMix"]
                     aborted = bool(data.get("aborted"))
+                elif event == "baseline_done":
+                    baseline_aborted = bool(data.get("aborted"))
                 elif event == "error":
                     error = data["message"]
-    return ChatResult("".join(answer_parts), sources, tier_mix, aborted, error)
+    return ChatResult(
+        "".join(answer_parts),
+        sources,
+        tier_mix,
+        aborted,
+        error,
+        "".join(baseline_parts),
+        baseline_aborted,
+    )
 
 
 def judge_groundedness(anthropic_client, query: str, result: ChatResult) -> tuple[bool, str]:
@@ -166,14 +190,26 @@ def main() -> int:
     parser.add_argument("--base-url", default="http://localhost:3000")
     parser.add_argument("--limit", type=int)
     parser.add_argument("--query", help="only queries containing this substring")
+    parser.add_argument(
+        "--pai", action="store_true",
+        help="also run PAI metrics FR13-FR16 (needs DATABASE_URL + VOYAGE_API_KEY)",
+    )
+    parser.add_argument(
+        "--k", type=int, default=5,
+        help="samples per probe query for self-consistency (FR15; default 5)",
+    )
     args = parser.parse_args()
 
     _load_dotenv(PIPELINE_DIR / ".env")
+    # Fallback: the app's local env file carries the same keys (setdefault
+    # semantics — real env and pipeline/.env still win).
+    _load_dotenv(PIPELINE_DIR.parent / "app" / ".env.local")
     import anthropic
 
     anthropic_client = anthropic.Anthropic()
 
-    entries = yaml.safe_load(GOLDEN.read_text())["queries"]
+    golden = yaml.safe_load(GOLDEN.read_text())
+    entries = golden["queries"]
     if args.query:
         entries = [e for e in entries if args.query.lower() in e["query"].lower()]
     if args.limit:
@@ -183,22 +219,67 @@ def main() -> int:
         if probes and not any(e.get("expect_honest_failure") for e in entries):
             entries[-1] = probes[0]
 
+    if args.pai:
+        missing = [k for k in ("DATABASE_URL", "VOYAGE_API_KEY") if not os.environ.get(k)]
+        if missing:
+            print(f"--pai needs {' and '.join(missing)} (env, pipeline/.env, or app/.env.local)")
+            return 2
+
     results = []
+    base_results: list[tuple[dict, ChatResult]] = []
     with httpx.Client() as client:
         for i, entry in enumerate(entries, 1):
             print(f"[{i}/{len(entries)}] {entry['query'][:70]} ...", flush=True)
-            chat = run_query(client, args.base_url, entry["query"])
+            # --pai runs in compare mode so FR13 gets the baseline answer too;
+            # the slice-3 checks below only ever look at the sourced fields.
+            chat = run_query(client, args.base_url, entry["query"], compare=args.pai)
+            base_results.append((entry, chat))
             scored = check_query(entry, chat, anthropic_client)
             results.append(scored)
             for name, c in scored["checks"].items():
                 mark = "PASS" if c["pass"] else "FAIL"
                 print(f"    {mark} {name}: {c['detail'][:110]}")
 
+        report: dict = {}
+        if args.pai:
+            from pai_metrics import CorpusOracle, run_pai
+
+            oracle = CorpusOracle(os.environ["DATABASE_URL"], os.environ["VOYAGE_API_KEY"])
+            try:
+                report["pai"] = run_pai(
+                    anthropic_client=anthropic_client,
+                    oracle=oracle,
+                    golden=golden,
+                    base_results=base_results,
+                    sample_fn=lambda q: run_query(client, args.base_url, q, compare=True),
+                    k=args.k,
+                    report_dir=EVALS_DIR,
+                )
+            finally:
+                oracle.close()
+
     hard_pass = all(r["passed"] for r in results)
     judged = [r["checks"]["groundedness"] for r in results if "groundedness" in r["checks"]]
     grounded_rate = (sum(1 for j in judged if j["pass"]) / len(judged)) if judged else 1.0
 
-    REPORT.write_text(json.dumps({"results": results, "grounded_rate": grounded_rate}, indent=2))
+    report = {"results": results, "grounded_rate": grounded_rate, **report}
+    REPORT.write_text(json.dumps(report, indent=2))
+    if "pai" in report:
+        pai = report["pai"]
+        cal = pai["calibration"]
+        print("\n[pai] ECE (5 bins): "
+              + ", ".join(
+                  f"{p}={cal[p]['ece']:.3f} (n={cal[p]['n']})" if cal[p]["ece"] is not None
+                  else f"{p}=n/a" for p in ("baseline", "sourced")))
+        agg = pai["self_consistency"]["aggregate"]
+        print(f"[pai] self-consistency (k={pai['self_consistency']['k']}): "
+              f"distance {agg['mean_pairwise_distance']}, flips {agg['claim_flip_fraction']}")
+        for row in pai["parity"]:
+            print(f"[pai] parity '{row['name']}' ({row['phrasing']}): "
+                  f"gap baseline={row['agency_gap']['baseline']}, "
+                  f"sourced={row['agency_gap']['sourced']}")
+        if cal.get("diagram"):
+            print(f"[pai] reliability diagram: {EVALS_DIR / cal['diagram']}")
     print(f"\nhard checks: {'PASS' if hard_pass else 'FAIL'}; "
           f"groundedness: {grounded_rate:.0%} (threshold {GROUNDEDNESS_PASS_RATE:.0%}); "
           f"report: {REPORT}")

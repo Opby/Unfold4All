@@ -42,7 +42,9 @@ NFR1–NFR5) → `design.md` (architecture, tiers, phasing) → `specs/slice-N.m
 
 ## Current stage
 
-Slice 2 (pipeline + pgvector index, hybrid retrieval, golden eval set) built
-on branch `slice-2-pipeline`. Slice 3 adds intro page, eval scoring in CI,
-Vercel deploy (remember `outputFileTracingIncludes` for
-`sources/registry.yaml` and `app/src/prompts/*.md`).
+Slices 1–4 shipped (app, index, evals-in-CI, Vercel deploy, live PAI metrics
+FR10–FR12 — see `specs/slice-4-metrics.md`). Slice 5 adds the eval-side PAI
+metrics FR13–FR16 (`evals/run.py --pai`: claim calibration/ECE, reliability
+diagram, self-consistency sampling, framing-parity probes —
+`specs/slice-5-eval-metrics.md`). Remaining: FR17–FR18 methods page + intro
+volatility demo.
