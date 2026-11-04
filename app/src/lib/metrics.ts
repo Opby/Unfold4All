@@ -9,25 +9,36 @@ import type { AnswerMetrics } from "./types";
 const MAX_ANSWER_CHARS = 8000;
 const METRICS_TIMEOUT_MS = 25_000;
 
+// No length caps in the schema: the model sometimes overshoots the prompt's
+// "at most 12" and a hard max would fail the whole parse (seen in prod).
+// Overflow is clamped after parsing instead.
 const Framing = z.object({
-  pastVerbs: z.array(z.string()).max(12),
-  presentVerbs: z.array(z.string()).max(12),
+  pastVerbs: z.array(z.string()),
+  presentVerbs: z.array(z.string()),
 });
 
 const FramingAnalysis = z.object({
   community: z.string(),
   baseline: Framing,
   sourced: Framing,
-  shifts: z
-    .array(
-      z.object({
-        aspect: z.string(),
-        baseline: z.string(),
-        sourced: z.string(),
-      }),
-    )
-    .max(3),
+  shifts: z.array(
+    z.object({
+      aspect: z.string(),
+      baseline: z.string(),
+      sourced: z.string(),
+    }),
+  ),
 });
+
+const MAX_VERBS = 12;
+const MAX_SHIFTS = 3;
+
+function clampFraming(f: z.infer<typeof Framing>): z.infer<typeof Framing> {
+  return {
+    pastVerbs: f.pastVerbs.slice(0, MAX_VERBS),
+    presentVerbs: f.presentVerbs.slice(0, MAX_VERBS),
+  };
+}
 
 async function analyzeFraming(
   query: string,
@@ -56,7 +67,12 @@ async function analyzeFraming(
   );
   const parsed = response.parsed_output;
   if (!parsed) throw new Error("framing analysis parse failed");
-  return parsed;
+  return {
+    community: parsed.community,
+    baseline: clampFraming(parsed.baseline),
+    sourced: clampFraming(parsed.sourced),
+    shifts: parsed.shifts.slice(0, MAX_SHIFTS),
+  };
 }
 
 function cosineDistance(a: number[], b: number[]): number {
